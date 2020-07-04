@@ -12,40 +12,145 @@ using namespace std;
 class Transformation {
 	
 	/* You must not edit above this line */
-		
-	public: Transformation(const string &From, const string &To) {
-		
+private:
+	string first, second;
+	size_t cost;
+	string transform;
+	vector<vector<string>> steps;
+	int **distance;
+
+public: 
+	Transformation(const string &From, const string &To) {
+		first = From;
+		second = To;
 		/* Implemet your Solution here! */
-		
-		;
+		size_t n = first.size();
+		size_t m = second.size();
+		distance = new int*[n + 1]; // 2D Feld initialisieren
+		for(size_t i = 0; i < n + 1; i++) {
+			distance[i] = new int[m + 1];
+		}
+		for(size_t i = 0; i < n + 1; i++) {
+			vector<string> row;
+			for(size_t j = 0; j < m + 1; j++) {
+				try {
+					row.push_back("");
+				} catch(...) {
+					throw "No Memory";
+				}	
+			}
+			try {
+				steps.push_back(row);
+			} catch(...) {
+				throw "No Memory";
+			}
+		}
+
+		for(size_t i = 0; i <= n; i++) {
+			for(size_t j = 0; j <= m; j++) {
+				if(i == 0 && j == 0) {
+					distance[0][0] = 0;
+				} else if(i == 0) {
+					distance[0][j] = j;
+					steps[0][j] = steps[0][j - 1] + "i";
+				} else if(j == 0 ){
+					distance[i][0] = i;
+					steps[i][0] = steps[i - 1][0] + "d";
+				} else if(first[i - 1] == second[j - 1]) {
+					distance[i][j] = distance[i - 1][j - 1];
+					steps[i][j] = steps[i - 1][j - 1] + "n";
+				} else {
+					distance[i][j] = min(distance[i - 1][j] + 1, min(distance[i - 1][j - 1] + 1, distance[i][j - 1] + 1));
+					if(distance[i - 1][j] <= distance[i - 1][j - 1] && distance[i - 1][j] <= distance[i][j - 1]) {
+						 steps[i][j] = steps[i - 1][j] + "d";
+					} else if(distance[i][j - 1] <= distance[i - 1][j] && distance[i][j - 1] <= distance[i - 1][j - 1]) {
+						 steps[i][j] = steps[i][j - 1] + "i";
+					} else {
+						 steps[i][j] = steps[i - 1][j - 1] + "e";
+					} 
+				}
+			}
+		}
+		cost = distance[n][m];
 	}
-	
-	
-	public: size_t Cost() { 
-		
-		/* Implemet your Solution here! */
-		
-		return 0;
-		
+	~Transformation() {
+		for(size_t i = 0; i <= first.size(); i++) { // 2D Feld löschen
+			delete[] distance[i];
+		}
+		delete[] distance;
+	}
+
+	string getFirst() {
+		return first;
+	}
+	string getSecond() {
+		return second;
+	}
+	string getSequence() {
+		return steps[steps.size() - 1][steps[0].size() - 1];
+	}
+	size_t Cost() { 
+		return cost;
 	}
 	
 	friend ostream& operator<< (ostream &TheOstream, Transformation &me) {
+		string toConvert = me.getFirst();
+		string second = me.getSecond();
+		string sequence = me.getSequence();
+
+		int maxsize = 0; // Ermitteln, wie lang der String waehrend der Operationen maximal wird, um die Ausgabe ausgerichten zu koennnen
+		for(size_t i = 0; i < sequence.size(); i++) {
+			static int size = 0;
+			if(sequence[i] == 'd') { // Bei jedem delete wird der String kürzer...
+				size--;
+			}
+			if(size > maxsize) maxsize = size;
+
+			if(sequence[i] == 'i') { // ...bei jedem Insert länger. Nach dem Vergleich, da ein Insert an der letzten Position die Länge nicht mehr verändert
+				size++;
+			}
+		}
+		maxsize += toConvert.size();
 		
-		/* Implemet your Solution here! */
-		
-		throw ("Long output not implemented yet");
-		
+		size_t n = 0, count = 0;
+		for(size_t i = 0; i < sequence.size(); i++) {
+			if(sequence[i] == 'n') {
+				n++;
+				continue;
+			}
+			TheOstream << "Step ";
+			TheOstream.width(3); TheOstream << ++count << " is to "; 
+			if(sequence[i] == 'e') {
+				TheOstream << "exchange " << toConvert[n] << " at Position "; 
+				TheOstream.width(3); TheOstream << n << " with " << second[n] << ": ";
+				TheOstream.width(maxsize); TheOstream << toConvert << " -> ";
+				toConvert[n] = second[n];
+				TheOstream << toConvert << endl;
+			} else if(sequence[i] == 'i') {
+				TheOstream << "insert   " << second[n] << " at Position ";
+				TheOstream.width(3); TheOstream << n << "       : ";
+				TheOstream.width(maxsize); TheOstream << toConvert << " -> ";
+				toConvert.insert(n, second, n, 1);
+				TheOstream << toConvert << endl;
+			} else if(sequence[i] == 'd') {
+				TheOstream << "delete   " << toConvert[n] << " at Position "; TheOstream.width(3); TheOstream << n << "       : ";
+				TheOstream.width(maxsize); TheOstream << toConvert << " -> ";
+				toConvert.erase(n, 1);
+				TheOstream << toConvert << endl;
+				n--;
+			} 
+			n++;
+		}
 		return TheOstream;
 	};
-	
-	/* You must not edit below this line */
 };
 
 
 void usage() { throw "Usage: edd String1 String2 [ -o ]"; }
 
+
 int main (int argc, char* argv[]) {
-  
+	
 	bool LongOutput=false; // If true the complete edit steps are printed line by line
 
 	try {
@@ -55,7 +160,6 @@ int main (int argc, char* argv[]) {
 			string arg = string(argv[3]);
 			if (!arg.compare("-o")) LongOutput = true; else usage();
 		}
-	
 		Transformation Try= Transformation(string(argv[1]), string(argv[2])); // Calculate edit steps
 		cout << "Transformation from " << argv[1] << " to " << argv[2] << " takes " << Try.Cost() << " Operations" << endl;
 		if (LongOutput) cout << endl << Try << endl;// optional long output
