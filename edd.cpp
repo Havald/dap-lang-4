@@ -21,7 +21,6 @@ public:
 	Transformation(const string &From, const string &To) {
 		first = From;
 		second = To;
-		/* Implemet your Solution here! */
 		size_t n = first.size();
 		size_t m = second.size();
 		int **distance; // Tabelle, welche die Editierdistanz für Teilprobleme abspeichert. Wird benötigt, um die Sequence zu erstellen
@@ -33,18 +32,19 @@ public:
 		} catch(...) {
 			throw "No Memory";
 		}
+		
 		try {
 			steps = vector<vector<string>>(n + 1, vector<string>(m + 1, "")); // Hier wird die Abfolge der Operationen (Sequence) gespeichert
 		} catch(...) {
 			throw "No Memory";
 		}
-		for(size_t i = 0; i <= n; i++) {
+		for(size_t i = 0; i <= n; i++) { // Minimale Editierdistanz nach Levensthein berechnen. Siehe: https://en.wikipedia.org/wiki/Levenshtein_distance
 			for(size_t j = 0; j <= m; j++) {
 				if(i == 0 && j == 0) {
 					distance[0][0] = 0;
 				} else if(i == 0) {
 					distance[0][j] = j;
-					steps[0][j] = steps[0][j - 1] + "i";
+					steps[0][j] = steps[0][j - 1] + "i"; // Neben der distance wird auch die Abfolge gespeichert. i -> insert, d -> delete, e -> exchange
 				} else if(j == 0 ){
 					distance[i][0] = i;
 					steps[i][0] = steps[i - 1][0] + "d";
@@ -142,7 +142,6 @@ void usage() { throw "Usage: edd String1 String2 [ -o ]"; }
 int main (int argc, char* argv[]) {
 	
 	bool LongOutput=false; // If true the complete edit steps are printed line by line
-
 	try {
 		if (argc<3||argc>4) usage();
 	
