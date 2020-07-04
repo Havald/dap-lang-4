@@ -10,41 +10,45 @@ using namespace std;
 
 
 class Transformation {
-	
-	/* You must not edit above this line */
 private:
 	string first, second;
 	size_t cost;
-	vector<vector<string>> steps;
+	string sequence;
 
 public: 
 	Transformation(const string &From, const string &To) {
 		first = From;
 		second = To;
-		size_t n = first.size();
-		size_t m = second.size();
+		size_t n = first.size() + 1;
+		size_t m = second.size() + 1;
 		int **distance; // Tabelle, welche die Editierdistanz für Teilprobleme abspeichert. Wird benötigt, um die Sequence zu erstellen
+		int *dummy;
+		vector<vector<string>> steps; // Hier wird die Abfolge der Operationen (Sequence) gespeichert
 		try {
-			distance = new int*[n + 1]; // 2D Feld initialisieren.
-			for(size_t i = 0; i < n + 1; i++) {
-				distance[i] = new int[m + 1];
-			}
+			distance = new int*[n]; // 2D Feld initialisieren.
+			dummy = new int[n * m];
 		} catch(...) {
 			throw "No Memory";
 		}
-		
+		for(size_t i = 0; i < n; i++) {
+			distance[i] = dummy + i * m;
+		}
+
 		try {
-			steps = vector<vector<string>>(n + 1, vector<string>(m + 1, "")); // Hier wird die Abfolge der Operationen (Sequence) gespeichert
+			steps = vector<vector<string>>(n, vector<string>(m, "")); 
 		} catch(...) {
+			delete[] dummy; // Im Fehlerfall Speicher freigeben
+			delete[] distance;
 			throw "No Memory";
 		}
-		for(size_t i = 0; i <= n; i++) { // Minimale Editierdistanz nach Levensthein berechnen. Siehe: https://en.wikipedia.org/wiki/Levenshtein_distance
-			for(size_t j = 0; j <= m; j++) {
+
+		for(size_t i = 0; i < n; i++) { // Minimale Editierdistanz nach Levenshtein berechnen. Siehe: https://en.wikipedia.org/wiki/Levenshtein_distance
+			for(size_t j = 0; j < m; j++) {
 				if(i == 0 && j == 0) {
 					distance[0][0] = 0;
 				} else if(i == 0) {
 					distance[0][j] = j;
-					steps[0][j] = steps[0][j - 1] + "i"; // Neben der distance wird auch die Abfolge gespeichert. i -> insert, d -> delete, e -> exchange
+					steps[0][j] = steps[0][j - 1] + "i"; // Neben der distance wird auch eine beliebige, optimale Abfolge gespeichert. i -> insert, d -> delete, e -> exchange
 				} else if(j == 0 ){
 					distance[i][0] = i;
 					steps[i][0] = steps[i - 1][0] + "d";
@@ -63,10 +67,10 @@ public:
 				}
 			}
 		}
-		cost = distance[n][m];
-		for(size_t i = 0; i <= first.size(); i++) { // 2D Feld löschen
-			delete[] distance[i];
-		}
+		cost = distance[n - 1][m - 1]; // Ergebnisse stehen im letzten Tabellenfeld
+		sequence = steps[n - 1][m - 1];
+
+		delete[] dummy; // 2D Feld löschen. Wenn man Teilprobleme betrachten möchte, könnten auch die gesamten Tabellen im Speicher behalten werden.
 		delete[] distance;
 	}
 
@@ -77,7 +81,7 @@ public:
 		return second;
 	}
 	string getSequence() {
-		return steps[steps.size() - 1][steps[0].size() - 1];
+		return sequence;
 	}
 	size_t Cost() { 
 		return cost;
@@ -142,6 +146,7 @@ void usage() { throw "Usage: edd String1 String2 [ -o ]"; }
 int main (int argc, char* argv[]) {
 	
 	bool LongOutput=false; // If true the complete edit steps are printed line by line
+
 	try {
 		if (argc<3||argc>4) usage();
 	
