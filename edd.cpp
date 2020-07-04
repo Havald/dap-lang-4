@@ -15,9 +15,7 @@ class Transformation {
 private:
 	string first, second;
 	size_t cost;
-	string transform;
 	vector<vector<string>> steps;
-	int **distance;
 
 public: 
 	Transformation(const string &From, const string &To) {
@@ -26,26 +24,20 @@ public:
 		/* Implemet your Solution here! */
 		size_t n = first.size();
 		size_t m = second.size();
-		distance = new int*[n + 1]; // 2D Feld initialisieren
-		for(size_t i = 0; i < n + 1; i++) {
-			distance[i] = new int[m + 1];
-		}
-		for(size_t i = 0; i < n + 1; i++) {
-			vector<string> row;
-			for(size_t j = 0; j < m + 1; j++) {
-				try {
-					row.push_back("");
-				} catch(...) {
-					throw "No Memory";
-				}	
+		int **distance; // Tabelle, welche die Editierdistanz für Teilprobleme abspeichert. Wird benötigt, um die Sequence zu erstellen
+		try {
+			distance = new int*[n + 1]; // 2D Feld initialisieren.
+			for(size_t i = 0; i < n + 1; i++) {
+				distance[i] = new int[m + 1];
 			}
-			try {
-				steps.push_back(row);
-			} catch(...) {
-				throw "No Memory";
-			}
+		} catch(...) {
+			throw "No Memory";
 		}
-
+		try {
+			steps = vector<vector<string>>(n + 1, vector<string>(m + 1, "")); // Hier wird die Abfolge der Operationen (Sequence) gespeichert
+		} catch(...) {
+			throw "No Memory";
+		}
 		for(size_t i = 0; i <= n; i++) {
 			for(size_t j = 0; j <= m; j++) {
 				if(i == 0 && j == 0) {
@@ -72,8 +64,6 @@ public:
 			}
 		}
 		cost = distance[n][m];
-	}
-	~Transformation() {
 		for(size_t i = 0; i <= first.size(); i++) { // 2D Feld löschen
 			delete[] distance[i];
 		}
@@ -98,7 +88,7 @@ public:
 		string second = me.getSecond();
 		string sequence = me.getSequence();
 
-		int maxsize = 0; // Ermitteln, wie lang der String waehrend der Operationen maximal wird, um die Ausgabe ausgerichten zu koennnen
+		int maxsize = 0; // Ermitteln, wie lang der String waehrend der Operationen maximal wird, um die Ausgabe ausrichten zu koennnen
 		for(size_t i = 0; i < sequence.size(); i++) {
 			static int size = 0;
 			if(sequence[i] == 'd') { // Bei jedem delete wird der String kürzer...
@@ -106,7 +96,7 @@ public:
 			}
 			if(size > maxsize) maxsize = size;
 
-			if(sequence[i] == 'i') { // ...bei jedem Insert länger. Nach dem Vergleich, da ein Insert an der letzten Position die Länge nicht mehr verändert
+			if(sequence[i] == 'i') { // ...bei jedem Insert länger. Nach dem Vergleich, da ein Insert an der letzten Position die Länge für die Ausgabe nicht mehr verändert
 				size++;
 			}
 		}
